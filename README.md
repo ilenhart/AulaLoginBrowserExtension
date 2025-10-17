@@ -14,6 +14,7 @@
 - [Quick Start](#quick-start)
 - [How It Works](#how-it-works)
 - [Common Use Cases](#common-use-cases)
+- [Related Projects](#related-projects)
 - [Usage](#usage)
 - [Backend API Requirements](#backend-api-requirements)
 - [Project Structure](#project-structure)
@@ -71,13 +72,6 @@ Perfect for automation scripts, session management tools, or maintaining persist
    cd AulaLoginBrowserExtension
    ```
 
-2. **Add extension icons** (if not already present):
-   - You need three PNG icons in the `icons/` directory:
-     - `icon16.png` (16×16 pixels)
-     - `icon48.png` (48×48 pixels)
-     - `icon128.png` (128×128 pixels)
-   - See `icons/README.txt` for instructions on creating icons from the SVG
-
 3. **Load the extension in Chrome**:
    - Open Chrome and go to `chrome://extensions/`
    - Enable **Developer mode** (toggle in top-right corner)
@@ -114,23 +108,6 @@ After installing the extension, you'll need to configure it:
 
 ## How It Works
 
-### Session Detection
-
-The extension uses multiple methods to detect your PHPSESSID:
-
-1. **Background Polling** (Primary method):
-   - Every 5 seconds, the extension checks for the PHPSESSID cookie
-   - Works even if the cookie is HttpOnly (hidden from JavaScript)
-   - Specifically checks the `/api` path where Aula.dk sets the cookie
-
-2. **Content Script** (Secondary method):
-   - Runs on Aula.dk pages
-   - Attempts to read `document.cookie` (won't work if HttpOnly)
-   - Monitors for changes every 2 seconds
-
-3. **On-Demand** (When you open the popup):
-   - Immediately fetches the latest session value
-   - Falls back to cached value if unavailable
 
 ### Backend Synchronization
 
@@ -143,13 +120,124 @@ When you click "Save Current Session to Backend" or when auto-update is enabled:
 
 ## Common Use Cases
 
-This extension is particularly useful for:
+This extension is particularly useful for storing a valid sessionID for Aula, for the use of other running services.
 
-- **API Automation**: Keep your automation scripts in sync with your active browser session
-- **Session Management**: Monitor and manage session lifetimes across multiple systems
-- **Development/Testing**: Easily access session tokens for testing API endpoints
-- **Session Persistence**: Maintain long-lived sessions by backing them up to external storage
-- **Multi-Device Sync**: Share session state across different machines or environments
+## Related Projects
+
+This extension is part of a suite of three interconnected projects designed to work with the Aula.dk platform. Each project can be used independently, but together they form a complete solution for Aula session management, API interaction, and automation.
+
+### 🔐 AulaLoginBrowserExtension (This Project)
+
+**Repository**: [github.com/ilenhart/AulaLoginBrowserExtension](https://github.com/ilenhart/AulaLoginBrowserExtension)
+
+**Purpose**: Chrome browser extension for capturing and storing Aula session IDs
+
+**What it does**:
+- Automatically detects and extracts your PHPSESSID from www.aula.dk
+- Provides a real-time view of your current session
+- Synchronizes session IDs with a backend persistence layer via REST API
+- Supports custom authentication for secure backend communication
+- Can work with any REST backend, or specifically with **AulaNewsletterTS** as a backend
+
+**Use this when**: You need to capture and persist your Aula session ID for use by other services or automation tools.
+
+---
+
+### 📡 AulaApiClient
+
+**Repository**: [github.com/ilenhart/AulaAPIClient](https://github.com/ilenhart/AulaApiClient)
+
+**Purpose**: General-purpose API wrapper for the Aula platform
+
+**What it does**:
+- Provides a clean, typed interface for interacting with Aula.dk `/api` endpoints
+- Handles authentication using the PHPSESSID session ID
+- Wraps common Aula API operations (messages, calendars, profiles, etc.)
+- Can be integrated into any Node.js or TypeScript project
+
+**Use this when**: You need to programmatically interact with Aula's API from your own applications or scripts.
+
+---
+
+### 📰 AulaNewsletterTS
+
+**Repository**: [github.com/ilenhart/AulaNewsletterTS](https://github.com/ilenhart/AulaNewsletterTS)
+
+**Purpose**: AWS-based automation platform for Aula with session persistence and AI-powered newsletters
+
+**What it does**:
+- Acts as a REST API backend for storing session IDs (compatible with this extension)
+- Periodically pings Aula to keep sessions alive  (similar to if you keep Aula open in your browser and occasionally refresh)
+- Pulls information from Aula using the **AulaApiClient** library
+- Generates AI-powered newsletters from Aula data
+- Sends automated email updates
+- Deployed as a serverless solution on AWS (Lambda, DynamoDB, SES)
+
+**Use this when**: You want a complete, turnkey solution for Aula automation, session management, and automated newsletters.
+
+---
+
+### How They Work Together
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Browser (www.aula.dk)                                      │
+│  ┌────────────────────────────────────┐                     │
+│  │  AulaLoginBrowserExtension         │                     │
+│  │  • Captures PHPSESSID              │                     │
+│  │  • Shows current session           │                     │
+│  └────────────────┬───────────────────┘                     │
+└───────────────────┼─────────────────────────────────────────┘
+                    │
+                    │ REST API (POST /session)
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│  AWS (AulaNewsletterTS)                                     │
+│  ┌────────────────────────────────────┐                     │
+│  │  • Stores session ID in DynamoDB   │                     │
+│  │  • Keeps session alive (pings)     │                     │
+│  │  • Uses AulaApiClient ────────┐    │                     │
+│  └────────────────────────────────┼────┘                    │
+└───────────────────────────────────┼─────────────────────────┘
+                                    │
+                                    │ Uses library
+                                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│  AulaApiClient                                              │
+│  ┌────────────────────────────────────┐                     │
+│  │  • Makes API calls to Aula.dk      │                     │
+│  │  • Fetches messages, calendar, etc │                     │
+│  │  • Returns structured data         │                     │
+│  └────────────────────────────────────┘                     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Usage Scenarios
+
+**Scenario 1: Manual Session Management**
+- Use **AulaLoginBrowserExtension** alone to view and manually save your session ID to a simple backend of your choice
+
+**Scenario 2: Custom Integration**
+- Use **AulaLoginBrowserExtension** to capture sessions
+- Use **AulaApiClient** in your own application to interact with Aula
+- Build your own backend for session storage
+
+**Scenario 3: Complete Automation (Recommended)**
+- Deploy **AulaNewsletterTS** to AWS
+- Install **AulaLoginBrowserExtension** and configure it to use AulaNewsletterTS endpoints
+- Extension automatically keeps the backend session updated
+- **AulaNewsletterTS** uses **AulaApiClient** to pull data and generate newsletters
+- Fully automated Aula monitoring and notifications
+
+### Getting Started with the Full Stack
+
+1. **Deploy AulaNewsletterTS** to AWS (follow its README for deployment instructions)
+2. **Install this extension** (AulaLoginBrowserExtension) in Chrome
+3. **Configure the extension** to use your AulaNewsletterTS API endpoints
+4. **Log into Aula.dk** - the extension will automatically sync your session
+5. **AulaNewsletterTS** will handle the rest (keeping session alive, generating newsletters)
+
+Each project has its own detailed documentation in its respective repository.
 
 ## Usage
 
@@ -245,7 +333,7 @@ Saves a new session ID.
 The extension supports custom HTTP header authentication. Configure in Settings:
 
 - **Header Name**: Default is `X-aulasession-authenticate` (can be changed)
-- **Header Value**: Your authentication token/secret
+- **Header Value**: Your authentication token/secret.  Note this is a value of your choosing, NOT the AulaSession value.
 
 If the header name is blank, no authentication header is sent. The header is included in all GET and POST requests.
 
@@ -324,7 +412,7 @@ Not currently. The extension is specifically designed for Aula.dk and checks the
 
 ### What happens if I log out of Aula.dk?
 
-The extension will detect that the PHPSESSID cookie is no longer available and show "Not detected" in the popup. Your backend stored session remains unchanged.
+The extension will detect that the PHPSESSID cookie is no longer available and show "Not detected" in the popup. Your backend stored session remains unchanged.  It's possible that directly logging out of Aula will invalidate the session stored in your backend, so it is likely best just to exit the site without logging out.
 
 ## Troubleshooting
 
@@ -455,28 +543,6 @@ The extension uses plain JavaScript (no build process):
 - TypeScript files (`.ts`) in `src/`
 - Service modules in `src/services/`
 
-## Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. **Report Issues**: Found a bug? Open an issue with details about how to reproduce it
-2. **Suggest Features**: Have an idea? Open an issue to discuss it
-3. **Submit Pull Requests**:
-   - Fork the repository
-   - Create a feature branch (`git checkout -b feature/amazing-feature`)
-   - Make your changes to the `.js` files in `src/`
-   - Test thoroughly by loading the extension in Chrome
-   - Commit your changes (`git commit -m 'Add amazing feature'`)
-   - Push to the branch (`git push origin feature/amazing-feature`)
-   - Open a Pull Request
-
-### Development Guidelines
-
-- Keep JavaScript files standalone (no imports/modules)
-- Add console logging for debugging
-- Test with both HTTP and HTTPS backends
-- Update documentation for new features
-- Follow existing code style
 
 ## Changelog
 
