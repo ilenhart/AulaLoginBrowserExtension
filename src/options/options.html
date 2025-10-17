@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula Session Manager - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Aula Session Manager Settings</h1>
+      <p class="subtitle">Configure your session management preferences</p>
+    </header>
+
+    <main>
+      <form id="settingsForm">
+        <!-- Auto-update Setting -->
+        <section class="settings-section">
+          <h2>Auto-Update</h2>
+          <div class="setting-item">
+            <label class="toggle-container">
+              <input type="checkbox" id="autoUpdate" name="autoUpdate">
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Automatically update backend when session changes</span>
+            </label>
+            <p class="setting-description">
+              When enabled, the extension will automatically save the current browser session
+              to the backend whenever it detects a change from the stored value.
+            </p>
+          </div>
+        </section>
+
+        <!-- API Endpoints -->
+        <section class="settings-section">
+          <h2>API Endpoints</h2>
+
+          <div class="setting-item">
+            <label for="retrieveEndpoint">Retrieve Session Endpoint</label>
+            <input
+              type="url"
+              id="retrieveEndpoint"
+              name="retrieveEndpoint"
+              placeholder="https://api.example.com/session/get"
+              class="text-input"
+            >
+            <p class="setting-description">
+              REST endpoint to retrieve the stored session ID from your backend.
+            </p>
+          </div>
+
+          <div class="setting-item">
+            <label for="saveEndpoint">Save Session Endpoint</label>
+            <input
+              type="url"
+              id="saveEndpoint"
+              name="saveEndpoint"
+              placeholder="https://api.example.com/session/save"
+              class="text-input"
+            >
+            <p class="setting-description">
+              REST endpoint to save the session ID to your backend.
+            </p>
+          </div>
+        </section>
+
+        <!-- Authentication -->
+        <section class="settings-section">
+          <h2>Authentication</h2>
+
+          <div class="setting-item">
+            <label for="authHeaderName">Custom Header Name</label>
+            <input
+              type="text"
+              id="authHeaderName"
+              name="authHeaderName"
+              placeholder="X-aulasession-authenticate"
+              class="text-input"
+            >
+            <p class="setting-description">
+              HTTP header name to send for authentication. Leave blank to disable authentication.
+            </p>
+          </div>
+
+          <div class="setting-item">
+            <label for="authHeaderValue">Header Value</label>
+            <input
+              type="text"
+              id="authHeaderValue"
+              name="authHeaderValue"
+              placeholder="your-secret-token"
+              class="text-input"
+            >
+            <p class="setting-description">
+              Value for the authentication header. This will be sent with all API requests.
+            </p>
+          </div>
+        </section>
+
+        <!-- Actions -->
+        <section class="actions-section">
+          <button type="submit" id="saveBtn" class="primary-btn">
+            Save Settings
+          </button>
+          <button type="button" id="resetBtn" class="secondary-btn">
+            Reset to Defaults
+          </button>
+          <button type="button" id="testConnectionBtn" class="secondary-btn">
+            Test Connection
+          </button>
+        </section>
+
+        <!-- Status Message -->
+        <div id="messageArea" class="message-area hidden">
+          <p id="messageText"></p>
+        </div>
+      </form>
+
+      <!-- Information Section -->
+      <section class="info-section">
+        <h2>About</h2>
+        <p>
+          This extension monitors your PHPSESSID cookie on Aula.dk and synchronizes
+          it with a backend storage system. Configure the endpoints above to connect
+          to your backend API.
+        </p>
+        <h3>Expected API Response Format</h3>
+        <pre><code>{
+  "Id": "string",
+  "sessionId": "string",
+  "created": "ISO 8601 date string",
+  "lastUpdated": "ISO 8601 date string",
+  "ttl": number
+}</code></pre>
+      </section>
+    </main>
+
+    <footer>
+      <small>Aula Session Manager v1.0.0</small>
+    </footer>
+  </div>
+
+  <script src="options-standalone.js"></script>
+</body>
+</html>

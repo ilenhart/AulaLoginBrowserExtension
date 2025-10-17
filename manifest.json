@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Aula Login Session Manager",
+  "version": "1.0.0",
+  "description": "Manages and syncs PHPSESSID cookies for Aula.dk with backend storage",
+  "permissions": [
+    "storage",
+    "cookies",
+    "webRequest",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.aula.dk/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.aula.dk/*"],
+      "js": ["src/content/content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker-standalone.js"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "src/options/options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

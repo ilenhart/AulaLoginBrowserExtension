@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula Session Manager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Aula Session Manager</h1>
+    </header>
+
+    <main>
+      <!-- Current Session Section -->
+      <section class="session-section">
+        <h2>Current Browser Session</h2>
+        <div class="session-info">
+          <label>PHPSESSID:</label>
+          <div class="session-value">
+            <span id="currentSessionId" class="session-id">Not detected</span>
+            <button id="refreshCurrentBtn" class="icon-btn" title="Refresh">
+              <span>&#x21bb;</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stored Session Section -->
+      <section class="session-section">
+        <h2>Backend Stored Session</h2>
+        <div class="session-info">
+          <label>PHPSESSID:</label>
+          <div class="session-value">
+            <span id="storedSessionId" class="session-id">Not loaded</span>
+            <button id="refreshStoredBtn" class="icon-btn" title="Refresh">
+              <span>&#x21bb;</span>
+            </button>
+          </div>
+        </div>
+        <div class="session-metadata">
+          <div class="metadata-item">
+            <label>Created:</label>
+            <span id="created">-</span>
+          </div>
+          <div class="metadata-item">
+            <label>Last Updated:</label>
+            <span id="lastUpdated">-</span>
+          </div>
+          <div class="metadata-item">
+            <label>TTL:</label>
+            <span id="ttl">-</span>
+          </div>
+        </div>
+        <div id="statusIndicator" class="status-indicator">
+          <span id="statusText">Status unknown</span>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="actions-section">
+        <button id="saveBtn" class="primary-btn" disabled>
+          Save Current Session to Backend
+        </button>
+        <button id="openOptionsBtn" class="secondary-btn">
+          Settings
+        </button>
+      </section>
+
+      <!-- Status Messages -->
+      <div id="messageArea" class="message-area hidden">
+        <p id="messageText"></p>
+      </div>
+    </main>
+
+    <footer>
+      <small>Auto-update: <span id="autoUpdateStatus">Unknown</span></small>
+    </footer>
+  </div>
+
+  <script src="popup-standalone.js"></script>
+</body>
+</html>
