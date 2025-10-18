@@ -28,6 +28,9 @@ function initElements() {
     statusIndicator: document.getElementById('statusIndicator'),
     statusText: document.getElementById('statusText'),
     saveBtn: document.getElementById('saveBtn'),
+    copyCurrentBtn: document.getElementById('copyCurrentBtn'),
+    copyIcon: document.getElementById('copyIcon'),
+    copiedText: document.getElementById('copiedText'),
     refreshCurrentBtn: document.getElementById('refreshCurrentBtn'),
     refreshStoredBtn: document.getElementById('refreshStoredBtn'),
     openOptionsBtn: document.getElementById('openOptionsBtn'),
@@ -40,6 +43,8 @@ function initElements() {
 // Setup event listeners
 function setupEventListeners() {
   elements.saveBtn.addEventListener('click', saveSession);
+
+  elements.copyCurrentBtn.addEventListener('click', copyCurrentSession);
 
   elements.refreshCurrentBtn.addEventListener('click', async () => {
     await loadCurrentSession();
@@ -120,6 +125,30 @@ async function loadStoredSession() {
   }
 }
 
+// Copy current session ID to clipboard
+async function copyCurrentSession() {
+  if (!currentSessionId) {
+    showMessage('No session ID to copy', 'error');
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(currentSessionId);
+
+    // Show "Copied!" text
+    elements.copyIcon.classList.add('hidden');
+    elements.copiedText.classList.remove('hidden');
+
+    // Reset after 2 seconds
+    setTimeout(() => {
+      elements.copyIcon.classList.remove('hidden');
+      elements.copiedText.classList.add('hidden');
+    }, 2000);
+  } catch (error) {
+    showMessage('Failed to copy to clipboard: ' + error.message, 'error');
+  }
+}
+
 // Save current session to backend
 async function saveSession() {
   if (!currentSessionId) {
@@ -163,10 +192,12 @@ function updateUI() {
     elements.currentSessionId.textContent = currentSessionId;
     elements.currentSessionId.classList.remove('empty');
     elements.saveBtn.disabled = false;
+    elements.copyCurrentBtn.disabled = false;
   } else {
     elements.currentSessionId.textContent = 'Not detected';
     elements.currentSessionId.classList.add('empty');
     elements.saveBtn.disabled = true;
+    elements.copyCurrentBtn.disabled = true;
   }
 
   // Update stored session display
@@ -187,7 +218,7 @@ function updateUI() {
     elements.lastUpdated.textContent = formatDate(lastUpdatedDate);
 
     // Display TTL
-    elements.ttl.textContent = `${storedSession.ttl} seconds`;
+    elements.ttl.textContent = formatTTL(storedSession.ttl);
 
     // Update status indicator
     updateStatusIndicator();
@@ -238,6 +269,29 @@ function showMessage(message, type) {
   setTimeout(() => {
     elements.messageArea.classList.add('hidden');
   }, 5000);
+}
+
+// Format TTL for display
+function formatTTL(seconds) {
+  const HOUR = 3600;
+  const DAY = 86400;
+
+  if (seconds >= DAY) {
+    // Show in days (rounded to nearest day)
+    const days = Math.round(seconds / DAY);
+    return `${days} day${days !== 1 ? 's' : ''}`;
+  } else if (seconds >= HOUR) {
+    // Show in hours and minutes
+    const hours = Math.floor(seconds / HOUR);
+    const minutes = Math.floor((seconds % HOUR) / 60);
+    if (minutes === 0) {
+      return `${hours} hour${hours !== 1 ? 's' : ''}`;
+    }
+    return `${hours}h ${minutes}m`;
+  } else {
+    // Show in seconds (less than an hour)
+    return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+  }
 }
 
 // Format date for display

@@ -17,9 +17,13 @@
       <section class="session-section">
         <h2>Current Browser Session</h2>
         <div class="session-info">
-          <label>PHPSESSID:</label>
+          <label>Aula Session:</label>
           <div class="session-value">
             <span id="currentSessionId" class="session-id">Not detected</span>
+            <button id="copyCurrentBtn" class="icon-btn copy-btn" title="Copy to clipboard">
+              <span id="copyIcon">&#x1F4CB;</span>
+              <span id="copiedText" class="copied-text hidden">Copied!</span>
+            </button>
             <button id="refreshCurrentBtn" class="icon-btn" title="Refresh">
               <span>&#x21bb;</span>
             </button>
@@ -31,7 +35,7 @@
       <section class="session-section">
         <h2>Backend Stored Session</h2>
         <div class="session-info">
-          <label>PHPSESSID:</label>
+          <label>Aula Session:</label>
           <div class="session-value">
             <span id="storedSessionId" class="session-id">Not loaded</span>
             <button id="refreshStoredBtn" class="icon-btn" title="Refresh">

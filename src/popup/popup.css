@@ -101,6 +101,31 @@ h2 {
   background: #2851a3;
 }
 
+.icon-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.copy-btn {
+  position: relative;
+  min-width: 36px;
+}
+
+.copied-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.copied-text.hidden {
+  display: none;
+}
+
 .session-metadata {
   display: flex;
   gap: 16px;

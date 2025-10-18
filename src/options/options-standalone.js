@@ -197,7 +197,7 @@ function isValidUrl(url) {
 function validateAulaSessionResponse(data) {
   return (
     data &&
-    typeof data.Id === 'string' &&
+    typeof data.Id === 'number' &&
     typeof data.sessionId === 'string' &&
     typeof data.lastUpdated === 'string' &&
     typeof data.ttl === 'number' &&
