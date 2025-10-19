@@ -17,6 +17,21 @@ let currentSessionId = null;
 let storedSession = null;
 let config = null;
 
+// ============================================================================
+// VALIDATION FUNCTIONS
+// ============================================================================
+
+// Validate that a session ID is a 32-character string of lowercase letters and numbers
+function isValidSessionId(sessionId) {
+  if (!sessionId || typeof sessionId !== 'string') {
+    return false;
+  }
+
+  // Session ID must be exactly 32 characters, containing only lowercase letters and numbers
+  const sessionIdRegex = /^[a-z0-9]{32}$/;
+  return sessionIdRegex.test(sessionId);
+}
+
 // Initialize DOM elements
 function initElements() {
   elements = {
@@ -156,6 +171,12 @@ async function saveSession() {
     return;
   }
 
+  // Validate session ID format
+  if (!isValidSessionId(currentSessionId)) {
+    showMessage('Invalid session ID format. Must be 32 lowercase alphanumeric characters.', 'error');
+    return;
+  }
+
   if (!config?.saveEndpoint) {
     showMessage('Save endpoint not configured. Please update settings.', 'error');
     return;
@@ -191,8 +212,17 @@ function updateUI() {
   if (currentSessionId) {
     elements.currentSessionId.textContent = currentSessionId;
     elements.currentSessionId.classList.remove('empty');
-    elements.saveBtn.disabled = false;
-    elements.copyCurrentBtn.disabled = false;
+
+    // Check if session ID is valid format
+    if (isValidSessionId(currentSessionId)) {
+      elements.saveBtn.disabled = false;
+      elements.copyCurrentBtn.disabled = false;
+    } else {
+      // Invalid session ID format - disable save button
+      elements.saveBtn.disabled = true;
+      elements.copyCurrentBtn.disabled = false; // Can still copy invalid IDs for debugging
+      showMessage('Warning: Session ID has invalid format (must be 32 lowercase alphanumeric characters)', 'error');
+    }
   } else {
     elements.currentSessionId.textContent = 'Not detected';
     elements.currentSessionId.classList.add('empty');

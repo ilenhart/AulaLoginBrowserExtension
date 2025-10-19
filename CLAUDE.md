@@ -13,9 +13,10 @@ The extension captures the PHPSESSID cookie value used by www.aula.dk when makin
 1. **Automatic Session Detection**: Polls the browser every 5 seconds to detect PHPSESSID cookie
 2. **Backend Synchronization**: Retrieves and saves session IDs to configurable REST endpoints
 3. **Auto-Update Mode**: Automatically compares and updates backend when session changes
-4. **Visual Status Indicator**: Shows if browser and backend sessions match
-5. **Manual Control**: Buttons for manual refresh and save operations
-6. **Settings Page**: Configure API endpoints and auto-update behavior
+4. **Session ID Validation**: Ensures only valid session IDs (32 lowercase alphanumeric characters) can be saved
+5. **Visual Status Indicator**: Shows if browser and backend sessions match
+6. **Manual Control**: Buttons for manual refresh and save operations
+7. **Settings Page**: Configure API endpoints and auto-update behavior
 
 ## Project Structure
 
@@ -75,7 +76,28 @@ The PHPSESSID cookie has these properties:
 
 The extension uses `chrome.cookies.get()` with the correct path to detect it.
 
-### 3. Backend Communication
+### 3. Session ID Validation
+
+**Validation Rules**:
+- Session ID must be exactly 32 characters long
+- Must contain only lowercase letters (a-z) and numbers (0-9)
+- No uppercase letters, special characters, or whitespace allowed
+- Null, empty, or undefined values are rejected
+
+**Validation Points**:
+1. **Manual Save** (Popup): Validates before sending to background worker
+2. **Background API** (`postSession()`): Validates before POST request to backend
+3. **Auto-Update** (`checkAndUpdateSession()`): Validates before comparing/updating
+4. **Message Handler** (`SAVE_SESSION`): Validates incoming save requests
+
+**User Feedback**:
+- Invalid session IDs disable the "Save" button in the popup
+- Error messages display when attempting to save invalid session IDs
+- Auto-update silently skips invalid session IDs and logs to console
+
+This prevents accidentally overwriting valid backend session IDs with invalid values.
+
+### 4. Backend Communication
 
 **API Endpoints**:
 
@@ -106,7 +128,7 @@ Response: {
 }
 ```
 
-### 4. Auto-Update Logic
+### 5. Auto-Update Logic
 
 When enabled, the background worker:
 1. Detects current browser PHPSESSID
@@ -115,7 +137,7 @@ When enabled, the background worker:
 4. If different, saves current session to backend
 5. Updates local cache
 
-### 5. User Interface
+### 6. User Interface
 
 **Popup** (`popup.html`):
 - Current Browser Session: Displays PHPSESSID from browser

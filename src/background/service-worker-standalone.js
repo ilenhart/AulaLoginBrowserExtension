@@ -64,6 +64,21 @@ async function saveStoredSession(session) {
 }
 
 // ============================================================================
+// VALIDATION FUNCTIONS
+// ============================================================================
+
+// Validate that a session ID is a 32-character string of lowercase letters and numbers
+function isValidSessionId(sessionId) {
+  if (!sessionId || typeof sessionId !== 'string') {
+    return false;
+  }
+
+  // Session ID must be exactly 32 characters, containing only lowercase letters and numbers
+  const sessionIdRegex = /^[a-z0-9]{32}$/;
+  return sessionIdRegex.test(sessionId);
+}
+
+// ============================================================================
 // API FUNCTIONS
 // ============================================================================
 
@@ -106,6 +121,11 @@ async function postSession(endpoint, sessionId, authHeaderName, authHeaderValue)
 
   if (!sessionId) {
     throw new Error('Session ID is required');
+  }
+
+  // Validate session ID format
+  if (!isValidSessionId(sessionId)) {
+    throw new Error('Invalid session ID format. Must be 32 lowercase alphanumeric characters.');
   }
 
   const response = await fetch(endpoint, {
@@ -168,6 +188,12 @@ async function getSessionIdFromCookies() {
 // Auto-update logic: compare current session with stored session
 async function checkAndUpdateSession(currentSessionId, config) {
   try {
+    // Validate session ID before proceeding
+    if (!isValidSessionId(currentSessionId)) {
+      console.error('Auto-update: Invalid session ID format, skipping update:', currentSessionId);
+      return;
+    }
+
     // Get stored session from backend
     const storedSession = await fetchStoredSession(
       config.retrieveEndpoint,
@@ -305,6 +331,11 @@ async function handleMessage(message) {
       const { sessionId } = message.payload;
       if (!sessionId) {
         throw new Error('Session ID is required');
+      }
+
+      // Validate session ID format before saving
+      if (!isValidSessionId(sessionId)) {
+        throw new Error('Invalid session ID format. Must be 32 lowercase alphanumeric characters.');
       }
 
       const savedSession = await postSession(
