@@ -13,10 +13,14 @@ const MessageType = {
 const elements = {
   form: document.getElementById('settingsForm'),
   autoUpdate: document.getElementById('autoUpdate'),
+  baseUrl: document.getElementById('baseUrl'),
   retrieveEndpoint: document.getElementById('retrieveEndpoint'),
   saveEndpoint: document.getElementById('saveEndpoint'),
   authHeaderName: document.getElementById('authHeaderName'),
   authHeaderValue: document.getElementById('authHeaderValue'),
+  newsletterEndpoint: document.getElementById('newsletterEndpoint'),
+  lastNumberOfDays: document.getElementById('lastNumberOfDays'),
+  futureDays: document.getElementById('futureDays'),
   saveBtn: document.getElementById('saveBtn'),
   resetBtn: document.getElementById('resetBtn'),
   testConnectionBtn: document.getElementById('testConnectionBtn'),
@@ -27,10 +31,14 @@ const elements = {
 // Default configuration
 const DEFAULT_CONFIG = {
   autoUpdate: false,
+  baseUrl: '',
   retrieveEndpoint: '',
   saveEndpoint: '',
   authHeaderName: 'X-aulasession-authenticate',
-  authHeaderValue: ''
+  authHeaderValue: '',
+  newsletterEndpoint: '',
+  lastNumberOfDays: 3,
+  futureDays: 14
 };
 
 // Load configuration from storage
@@ -55,10 +63,14 @@ async function loadConfig() {
 // Populate form with configuration values
 function populateForm(config) {
   elements.autoUpdate.checked = config.autoUpdate;
+  elements.baseUrl.value = config.baseUrl || '';
   elements.retrieveEndpoint.value = config.retrieveEndpoint;
   elements.saveEndpoint.value = config.saveEndpoint;
   elements.authHeaderName.value = config.authHeaderName || 'X-aulasession-authenticate';
   elements.authHeaderValue.value = config.authHeaderValue || '';
+  elements.newsletterEndpoint.value = config.newsletterEndpoint || '';
+  elements.lastNumberOfDays.value = config.lastNumberOfDays || 3;
+  elements.futureDays.value = config.futureDays || 14;
 }
 
 // Save configuration
@@ -67,20 +79,49 @@ async function saveConfig(event) {
 
   const config = {
     autoUpdate: elements.autoUpdate.checked,
+    baseUrl: elements.baseUrl.value.trim(),
     retrieveEndpoint: elements.retrieveEndpoint.value.trim(),
     saveEndpoint: elements.saveEndpoint.value.trim(),
     authHeaderName: elements.authHeaderName.value.trim(),
-    authHeaderValue: elements.authHeaderValue.value.trim()
+    authHeaderValue: elements.authHeaderValue.value.trim(),
+    newsletterEndpoint: elements.newsletterEndpoint.value.trim(),
+    lastNumberOfDays: parseInt(elements.lastNumberOfDays.value, 10) || 3,
+    futureDays: parseInt(elements.futureDays.value, 10) || 14
   };
 
-  // Validate endpoints
-  if (config.retrieveEndpoint && !isValidUrl(config.retrieveEndpoint)) {
+  // Validate base URL if provided
+  if (config.baseUrl && !isValidUrl(config.baseUrl)) {
+    showMessage('Invalid base URL', 'error');
+    return;
+  }
+
+  // Validate endpoints (build full URLs and validate)
+  const retrieveUrl = buildFullUrl(config.baseUrl, config.retrieveEndpoint);
+  if (config.retrieveEndpoint && retrieveUrl && !isValidUrl(retrieveUrl)) {
     showMessage('Invalid retrieve endpoint URL', 'error');
     return;
   }
 
-  if (config.saveEndpoint && !isValidUrl(config.saveEndpoint)) {
+  const saveUrl = buildFullUrl(config.baseUrl, config.saveEndpoint);
+  if (config.saveEndpoint && saveUrl && !isValidUrl(saveUrl)) {
     showMessage('Invalid save endpoint URL', 'error');
+    return;
+  }
+
+  const newsletterUrl = buildFullUrl(config.baseUrl, config.newsletterEndpoint);
+  if (config.newsletterEndpoint && newsletterUrl && !isValidUrl(newsletterUrl)) {
+    showMessage('Invalid newsletter endpoint URL', 'error');
+    return;
+  }
+
+  // Validate number fields
+  if (config.lastNumberOfDays < 1 || config.lastNumberOfDays > 365) {
+    showMessage('Last Number of Days must be between 1 and 365', 'error');
+    return;
+  }
+
+  if (config.futureDays < 1 || config.futureDays > 365) {
+    showMessage('Future Days must be between 1 and 365', 'error');
     return;
   }
 
@@ -116,6 +157,7 @@ function resetConfig() {
 
 // Test connection to backend
 async function testConnection() {
+  const baseUrl = elements.baseUrl.value.trim();
   const retrieveEndpoint = elements.retrieveEndpoint.value.trim();
 
   if (!retrieveEndpoint) {
@@ -123,7 +165,10 @@ async function testConnection() {
     return;
   }
 
-  if (!isValidUrl(retrieveEndpoint)) {
+  // Build full URL
+  const fullUrl = buildFullUrl(baseUrl, retrieveEndpoint);
+
+  if (!fullUrl || !isValidUrl(fullUrl)) {
     showMessage('Invalid retrieve endpoint URL', 'error');
     return;
   }
@@ -132,7 +177,7 @@ async function testConnection() {
     elements.testConnectionBtn.disabled = true;
     elements.testConnectionBtn.textContent = 'Testing...';
 
-    const response = await fetch(retrieveEndpoint, {
+    const response = await fetch(fullUrl, {
       method: 'GET',
       headers: buildHeaders(
         elements.authHeaderName.value.trim(),
@@ -181,6 +226,32 @@ function buildHeaders(authHeaderName, authHeaderValue) {
   }
 
   return headers;
+}
+
+// Build full URL from base URL and path
+function buildFullUrl(baseUrl, path) {
+  // If path is empty, return empty
+  if (!path) {
+    return '';
+  }
+
+  // If path is already a full URL, return it as-is (backward compatibility)
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // If no base URL, return path as-is (backward compatibility)
+  if (!baseUrl) {
+    return path;
+  }
+
+  // Remove trailing slash from base URL
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+  // Ensure path starts with /
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+
+  return cleanBase + cleanPath;
 }
 
 // Validate URL format

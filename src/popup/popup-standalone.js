@@ -6,7 +6,8 @@ const MessageType = {
   GET_STORED_SESSION: 'GET_STORED_SESSION',
   SAVE_SESSION: 'SAVE_SESSION',
   UPDATE_CONFIG: 'UPDATE_CONFIG',
-  GET_CONFIG: 'GET_CONFIG'
+  GET_CONFIG: 'GET_CONFIG',
+  SEND_NEWSLETTER: 'SEND_NEWSLETTER'
 };
 
 // DOM elements - will be initialized when DOM is ready
@@ -43,6 +44,7 @@ function initElements() {
     statusIndicator: document.getElementById('statusIndicator'),
     statusText: document.getElementById('statusText'),
     saveBtn: document.getElementById('saveBtn'),
+    sendNewsletterBtn: document.getElementById('sendNewsletterBtn'),
     copyCurrentBtn: document.getElementById('copyCurrentBtn'),
     copyIcon: document.getElementById('copyIcon'),
     copiedText: document.getElementById('copiedText'),
@@ -58,6 +60,8 @@ function initElements() {
 // Setup event listeners
 function setupEventListeners() {
   elements.saveBtn.addEventListener('click', saveSession);
+
+  elements.sendNewsletterBtn.addEventListener('click', sendNewsletter);
 
   elements.copyCurrentBtn.addEventListener('click', copyCurrentSession);
 
@@ -203,6 +207,34 @@ async function saveSession() {
   } finally {
     elements.saveBtn.disabled = false;
     elements.saveBtn.textContent = 'Save Current Session to Backend';
+  }
+}
+
+// Send newsletter request
+async function sendNewsletter() {
+  if (!config?.newsletterEndpoint) {
+    showMessage('Newsletter endpoint not configured. Please update settings.', 'error');
+    return;
+  }
+
+  try {
+    elements.sendNewsletterBtn.disabled = true;
+    elements.sendNewsletterBtn.textContent = 'Sending...';
+
+    const response = await chrome.runtime.sendMessage({
+      type: MessageType.SEND_NEWSLETTER
+    });
+
+    if (response.success) {
+      showMessage('Newsletter request sent successfully!', 'success');
+    } else {
+      showMessage('Failed to send newsletter: ' + response.error, 'error');
+    }
+  } catch (error) {
+    showMessage('Error sending newsletter: ' + error.message, 'error');
+  } finally {
+    elements.sendNewsletterBtn.disabled = false;
+    elements.sendNewsletterBtn.textContent = 'Generate Newsletter Now';
   }
 }
 

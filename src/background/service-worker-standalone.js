@@ -9,16 +9,21 @@ const MessageType = {
   GET_STORED_SESSION: 'GET_STORED_SESSION',
   SAVE_SESSION: 'SAVE_SESSION',
   UPDATE_CONFIG: 'UPDATE_CONFIG',
-  GET_CONFIG: 'GET_CONFIG'
+  GET_CONFIG: 'GET_CONFIG',
+  SEND_NEWSLETTER: 'SEND_NEWSLETTER'
 };
 
 // Default configuration
 const DEFAULT_CONFIG = {
   autoUpdate: false,
+  baseUrl: '',
   retrieveEndpoint: '',
   saveEndpoint: '',
   authHeaderName: 'X-aulasession-authenticate',
-  authHeaderValue: ''
+  authHeaderValue: '',
+  newsletterEndpoint: '',
+  lastNumberOfDays: 3,
+  futureDays: 14
 };
 
 // Storage keys
@@ -82,6 +87,40 @@ function isValidSessionId(sessionId) {
 // API FUNCTIONS
 // ============================================================================
 
+// Build full URL from base URL and path
+function buildFullUrl(baseUrl, path) {
+  // If path is empty, return empty
+  if (!path) {
+    return '';
+  }
+
+  // If path is already a full URL, return it as-is (backward compatibility)
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // If no base URL, return path as-is (backward compatibility)
+  if (!baseUrl) {
+    return path;
+  }
+
+  // Remove trailing slash from base URL
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+  // Ensure path starts with /
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+
+  const result = cleanBase + cleanPath;
+
+  console.log('buildFullUrl - Input baseUrl:', baseUrl);
+  console.log('buildFullUrl - Input path:', path);
+  console.log('buildFullUrl - cleanBase:', cleanBase);
+  console.log('buildFullUrl - cleanPath:', cleanPath);
+  console.log('buildFullUrl - Result:', result);
+
+  return result;
+}
+
 // Build headers object with optional authentication
 function buildHeaders(authHeaderName, authHeaderValue) {
   const headers = {
@@ -96,12 +135,17 @@ function buildHeaders(authHeaderName, authHeaderValue) {
   return headers;
 }
 
-async function fetchStoredSession(endpoint, authHeaderName, authHeaderValue) {
+async function fetchStoredSession(baseUrl, endpoint, authHeaderName, authHeaderValue) {
   if (!endpoint) {
     throw new Error('Retrieve endpoint not configured');
   }
 
-  const response = await fetch(endpoint, {
+  const fullUrl = buildFullUrl(baseUrl, endpoint);
+  if (!fullUrl) {
+    throw new Error('Invalid retrieve endpoint URL');
+  }
+
+  const response = await fetch(fullUrl, {
     method: 'GET',
     headers: buildHeaders(authHeaderName, authHeaderValue)
   });
@@ -114,7 +158,7 @@ async function fetchStoredSession(endpoint, authHeaderName, authHeaderValue) {
   return data;
 }
 
-async function postSession(endpoint, sessionId, authHeaderName, authHeaderValue) {
+async function postSession(baseUrl, endpoint, sessionId, authHeaderName, authHeaderValue) {
   if (!endpoint) {
     throw new Error('Save endpoint not configured');
   }
@@ -128,7 +172,12 @@ async function postSession(endpoint, sessionId, authHeaderName, authHeaderValue)
     throw new Error('Invalid session ID format. Must be 32 lowercase alphanumeric characters.');
   }
 
-  const response = await fetch(endpoint, {
+  const fullUrl = buildFullUrl(baseUrl, endpoint);
+  if (!fullUrl) {
+    throw new Error('Invalid save endpoint URL');
+  }
+
+  const response = await fetch(fullUrl, {
     method: 'POST',
     headers: buildHeaders(authHeaderName, authHeaderValue),
     body: JSON.stringify({
@@ -140,6 +189,41 @@ async function postSession(endpoint, sessionId, authHeaderName, authHeaderValue)
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
+  const data = await response.json();
+  return data;
+}
+
+async function sendNewsletter(baseUrl, endpoint, lastNumberOfDays, futureDays, authHeaderName, authHeaderValue) {
+  if (!endpoint) {
+    throw new Error('Newsletter endpoint not configured');
+  }
+
+  const fullUrl = buildFullUrl(baseUrl, endpoint);
+  console.log('Newsletter - Base URL:', baseUrl);
+  console.log('Newsletter - Endpoint:', endpoint);
+  console.log('Newsletter - Full URL:', fullUrl);
+
+  if (!fullUrl) {
+    throw new Error('Invalid newsletter endpoint URL');
+  }
+
+  // Build URL with query parameters
+  const url = new URL(fullUrl);
+  url.searchParams.set('lastNumberOfDays', lastNumberOfDays.toString());
+  url.searchParams.set('futureDays', futureDays.toString());
+
+  console.log('Newsletter - Final URL with params:', url.toString());
+
+  const response = await fetch(url.toString(), {
+    method: 'PUT',
+    headers: buildHeaders(authHeaderName, authHeaderValue)
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  // Return the response (fire and forget, but we'll check for errors)
   const data = await response.json();
   return data;
 }
@@ -196,6 +280,7 @@ async function checkAndUpdateSession(currentSessionId, config) {
 
     // Get stored session from backend
     const storedSession = await fetchStoredSession(
+      config.baseUrl,
       config.retrieveEndpoint,
       config.authHeaderName,
       config.authHeaderValue
@@ -212,6 +297,7 @@ async function checkAndUpdateSession(currentSessionId, config) {
       });
 
       const updatedSession = await postSession(
+        config.baseUrl,
         config.saveEndpoint,
         currentSessionId,
         config.authHeaderName,
@@ -255,6 +341,8 @@ async function pollForSession() {
 // ============================================================================
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Message received:', message.type);
+
   // Handle SESSION_DETECTED message from content script
   if (message.type === 'SESSION_DETECTED' && message.sessionId) {
     console.log('✓ Received session from content script:', message.sessionId);
@@ -310,6 +398,7 @@ async function handleMessage(message) {
       }
 
       const storedSession = await fetchStoredSession(
+        config.baseUrl,
         config.retrieveEndpoint,
         config.authHeaderName,
         config.authHeaderValue
@@ -339,6 +428,7 @@ async function handleMessage(message) {
       }
 
       const savedSession = await postSession(
+        config.baseUrl,
         config.saveEndpoint,
         sessionId,
         config.authHeaderName,
@@ -365,6 +455,44 @@ async function handleMessage(message) {
       return {
         success: true
       };
+    }
+
+    case MessageType.SEND_NEWSLETTER: {
+      console.log('SEND_NEWSLETTER message received');
+      const config = await getConfig();
+      console.log('Config loaded:', config);
+
+      if (!config.newsletterEndpoint) {
+        console.error('Newsletter endpoint not configured');
+        throw new Error('Newsletter endpoint not configured');
+      }
+
+      console.log('Calling sendNewsletter with:', {
+        baseUrl: config.baseUrl,
+        endpoint: config.newsletterEndpoint,
+        lastNumberOfDays: config.lastNumberOfDays,
+        futureDays: config.futureDays
+      });
+
+      try {
+        const result = await sendNewsletter(
+          config.baseUrl,
+          config.newsletterEndpoint,
+          config.lastNumberOfDays,
+          config.futureDays,
+          config.authHeaderName,
+          config.authHeaderValue
+        );
+
+        console.log('sendNewsletter completed successfully:', result);
+        return {
+          success: true,
+          data: result
+        };
+      } catch (error) {
+        console.error('Error in sendNewsletter:', error);
+        throw error;
+      }
     }
 
     default:

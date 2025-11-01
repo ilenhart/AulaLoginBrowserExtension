@@ -36,30 +36,44 @@
           <h2>API Endpoints</h2>
 
           <div class="setting-item">
-            <label for="retrieveEndpoint">Retrieve Session Endpoint</label>
+            <label for="baseUrl">Base URL</label>
             <input
               type="url"
-              id="retrieveEndpoint"
-              name="retrieveEndpoint"
-              placeholder="https://api.example.com/session/get"
+              id="baseUrl"
+              name="baseUrl"
+              placeholder="https://your-api-id.execute-api.region.amazonaws.com/"
               class="text-input"
             >
             <p class="setting-description">
-              REST endpoint to retrieve the stored session ID from your backend.
+              Common base URL for all API endpoints. Leave blank if using full URLs below.
+            </p>
+          </div>
+
+          <div class="setting-item">
+            <label for="retrieveEndpoint">Retrieve Session Endpoint</label>
+            <input
+              type="text"
+              id="retrieveEndpoint"
+              name="retrieveEndpoint"
+              placeholder="/prod/api/sessionId"
+              class="text-input"
+            >
+            <p class="setting-description">
+              Path to retrieve session endpoint (e.g., /prod/api/sessionId) or full URL.
             </p>
           </div>
 
           <div class="setting-item">
             <label for="saveEndpoint">Save Session Endpoint</label>
             <input
-              type="url"
+              type="text"
               id="saveEndpoint"
               name="saveEndpoint"
-              placeholder="https://api.example.com/session/save"
+              placeholder="/prod/api/sessionId"
               class="text-input"
             >
             <p class="setting-description">
-              REST endpoint to save the session ID to your backend.
+              Path to save session endpoint (e.g., /prod/api/sessionId) or full URL.
             </p>
           </div>
         </section>
@@ -93,6 +107,57 @@
             >
             <p class="setting-description">
               Value for the authentication header. This will be sent with all API requests.
+            </p>
+          </div>
+        </section>
+
+        <!-- Newsletter Settings -->
+        <section class="settings-section">
+          <h2>Newsletter</h2>
+
+          <div class="setting-item">
+            <label for="newsletterEndpoint">Send Newsletter Endpoint</label>
+            <input
+              type="text"
+              id="newsletterEndpoint"
+              name="newsletterEndpoint"
+              placeholder="/prod/api/sendNewsletter"
+              class="text-input"
+            >
+            <p class="setting-description">
+              Path to newsletter endpoint (e.g., /prod/api/sendNewsletter) or full URL.
+            </p>
+          </div>
+
+          <div class="setting-item">
+            <label for="lastNumberOfDays">Last Number of Days</label>
+            <input
+              type="number"
+              id="lastNumberOfDays"
+              name="lastNumberOfDays"
+              min="1"
+              max="365"
+              value="3"
+              class="text-input"
+            >
+            <p class="setting-description">
+              Number of past days to include in the newsletter (default: 3).
+            </p>
+          </div>
+
+          <div class="setting-item">
+            <label for="futureDays">Future Days</label>
+            <input
+              type="number"
+              id="futureDays"
+              name="futureDays"
+              min="1"
+              max="365"
+              value="14"
+              class="text-input"
+            >
+            <p class="setting-description">
+              Number of future days to include in the newsletter (default: 14).
             </p>
           </div>
         </section>

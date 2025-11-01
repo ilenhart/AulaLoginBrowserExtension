@@ -45,6 +45,7 @@ Perfect for automation scripts, session management tools, or maintaining persist
 - ✅ **Auto-Update Mode**: Automatically sync when your session changes
 - ✅ **Visual Status Indicator**: See at a glance if browser and backend sessions match
 - ✅ **Manual Control**: Refresh and save buttons for manual operation
+- ✅ **Newsletter Generation**: Send newsletter requests via one-click button with configurable parameters
 - ✅ **Configurable**: Flexible API endpoint configuration via settings page
 - ✅ **Secure**: Works with HttpOnly cookies and path-specific cookies
 
@@ -241,6 +242,8 @@ Each project has its own detailed documentation in its respective repository.
 
 ## Usage
 
+**Note** - Once you have logged into Aula in your browser and retrieved the session, you must close the browser window (not log out of Aula).   If the browser window is left open, then the Aula web app will itself eventually time out, invalidating the session.   Closing the window without logging out leaves the session open to be refreshed.
+
 ### Viewing Your Session
 
 1. Navigate to `www.aula.dk` and log in
@@ -278,7 +281,7 @@ This happens every time the extension detects your session (approximately every 
 
 ## Backend API Requirements
 
-Your backend needs to implement two REST endpoints:
+Your backend needs to implement these REST endpoints:
 
 ### GET Endpoint (Retrieve Session)
 
@@ -328,6 +331,29 @@ Saves a new session ID.
 }
 ```
 
+### PUT Endpoint (Send Newsletter) - Optional
+
+Sends a request to generate and send a newsletter.
+
+**Endpoint**: Your configured newsletter URL with query parameters
+
+**Method**: HTTP PUT
+
+**Query Parameters**:
+- `lastNumberOfDays`: Number of past days to include (default: 3)
+- `futureDays`: Number of future days to include (default: 14)
+
+**Example Request**:
+```
+PUT /api/sendNewsletter?lastNumberOfDays=3&futureDays=14
+Headers:
+  X-aulasession-authenticate: your-secret-token-here
+```
+
+**Response**: Any JSON response (content is ignored - this is fire and forget)
+
+**Note**: The newsletter endpoint is optional. If not configured, the "Generate Newsletter Now" button will show an error when clicked.
+
 ### Authentication (Optional but Recommended)
 
 The extension supports custom HTTP header authentication. Configure in Settings:
@@ -351,7 +377,7 @@ Your backend must allow requests from `chrome-extension://` origins:
 
 ```
 Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST
+Access-Control-Allow-Methods: GET, POST, PUT
 Access-Control-Allow-Headers: Content-Type, X-aulasession-authenticate
 ```
 
